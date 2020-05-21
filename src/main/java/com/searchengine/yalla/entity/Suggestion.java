@@ -12,10 +12,8 @@ import javax.persistence.*;
 @Getter
 @ToString
 public class Suggestion {
+
     @Id
-    @Column(name = "id")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
     @Column(name = "suggestion")
     private String suggestion;
 
