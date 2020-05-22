@@ -5,7 +5,6 @@ import com.searchengine.yalla.ranker.PageRanker;
 import com.searchengine.yalla.repository.SuggestionRepository;
 import com.searchengine.yalla.utils.Stemmer;
 
-import org.json.JSONException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.RestController;
@@ -40,7 +39,6 @@ public class YallaController {
             *
             * */
     {
-        System.out.println(suggestion.getSuggestion());
         try {
             suggestionRepository.save(suggestion);
         }
@@ -51,10 +49,43 @@ public class YallaController {
     }
 
     @RequestMapping(method = RequestMethod.GET,
-            value = spring_path + "/getResults/{value}/{index}/{size}")
+            value = spring_path + "/getResults/{value}/{index}/{size}/{phrase}")
     public List<Object> getResults(@PathVariable("value") String value,
                                    @PathVariable("index") Integer index,
-                                   @PathVariable("size") Integer size) throws JSONException {
+                                   @PathVariable("size") Integer size,
+                                   @PathVariable("phrase")Boolean phrase) throws SQLException {
+        String[] words = value.trim().split("\\s+");
+        ArrayList<String> searchWords = new ArrayList<String>();
+
+        int i = 0;
+        while(i < words.length) {
+            //get lower case of the word
+            String lower = words[i].toLowerCase();
+
+            // if stop word (do nothing)
+            if (this.stopWords.contains(lower) == false) {
+                // stem the word
+                this.stemmer.add(lower.toCharArray(), lower.length());
+                this.stemmer.stem();
+                lower = this.stemmer.toString();
+                searchWords.add(lower);
+            }
+            i++;
+        }
+        System.out.println("Search Words:");
+        System.out.println(searchWords);
+
+        // Fixed data to test with it
+        List<Object> response = new ArrayList<Object>();
+        response = this.pageRanker.pageRelevance(searchWords,phrase,index*size,size);
+        return response;
+    }
+
+    @RequestMapping(method = RequestMethod.GET,
+            value = spring_path + "/getImageResults/{value}/{index}/{size}")
+    public List<Object> getImageResults(@PathVariable("value") String value,
+                                        @PathVariable("index") Integer index,
+                                        @PathVariable("size") Integer size) throws SQLException {
         String[] words = value.trim().split("\\s+");
         ArrayList<String> searchWords = new ArrayList<String>();
 
@@ -79,30 +110,7 @@ public class YallaController {
         // Fixed data to test with it
         List<Object> response = new ArrayList<Object>();
 
-
-        Dictionary result1 = new Hashtable();
-
-        result1.put("url","https://www.google.com");
-        result1.put("title","Google");
-        result1.put("description","google search engine");
-        Dictionary result2 = new Hashtable();
-        result2.put("url","https://www.google.com");
-        result2.put("title","Google2");
-        result2.put("description","google search engine2");
-        List<Object>Results = new ArrayList<Object>();
-        Results.add(result1);
-        Results.add(result2);
-        Dictionary searchResults = new Hashtable();
-        searchResults.put("searchResults",Results);
-        System.out.println(searchResults);
-        Dictionary page = new Hashtable();
-        Dictionary pageDetails = new Hashtable();
-        page.put("totalSize","2");
-        pageDetails.put("pageDetails",page);
-
-        response.add(searchResults);
-        response.add(pageDetails);
-        System.out.println(response);
+        response = this.pageRanker.imageRelevance(searchWords,index*size,size);
         return response;
     }
 
@@ -115,7 +123,6 @@ public class YallaController {
 
         //MySqlTest.connect();
         System.out.println("Inside ranker");
-        PageRanker p1 = new PageRanker();
         //p1.pagePopularity();
 
         ArrayList<String> searchWords = new ArrayList<String>();
@@ -124,7 +131,7 @@ public class YallaController {
         searchWords.add("loop");
         searchWords.add("mobile");
         searchWords.add("plate");
-        p1.pageRelevance(searchWords,false);
+        //this.pageRanker.pageRelevance(searchWords,false);
         //p1.imageRelevance(searchWords);
     }
 
