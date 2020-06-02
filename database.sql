@@ -1,13 +1,13 @@
 -- create database Yalla search engine
-DROP SCHEMA IF EXISTS `yalla-dev`;
-CREATE SCHEMA `yalla-dev`;
+DROP SCHEMA IF EXISTS `yalla-prod`;
+CREATE SCHEMA `yalla-prod`;
 
 -- select the database
-USE `yalla-dev` ;
+USE `yalla-prod` ;
 
 
   -- create category table tbl_category
-CREATE TABLE IF NOT EXISTS `yalla-dev`.`yalla_suggestions` (
+CREATE TABLE IF NOT EXISTS `yalla-prod`.`yalla_suggestions` (
   suggestion VARCHAR(255) NOT NULL PRIMARY KEY
   );
   

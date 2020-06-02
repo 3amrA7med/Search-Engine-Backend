@@ -10,7 +10,7 @@ import java.util.ArrayList;
 
 public class MySqlTest {
 
-    final static String Db_name = "yalla-dev";
+    final static String Db_name = "yalla-prod";
     final static String url1 = "jdbc:mysql://localhost:3306/" + Db_name;
     final static String user = "yalladev";
     final static String password = "yalladev";

@@ -3,8 +3,10 @@ package com.searchengine.yalla.controller;
 import com.searchengine.yalla.entity.Suggestion;
 import com.searchengine.yalla.ranker.PageRanker;
 import com.searchengine.yalla.repository.SuggestionRepository;
+import com.searchengine.yalla.utils.OpenNLP;
 import com.searchengine.yalla.utils.Stemmer;
 
+import com.searchengine.yalla.utils.Trends_DB_Handler;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,23 +26,38 @@ public class YallaController {
     private PageRanker pageRanker;
     private Stemmer stemmer;
     private List<String> stopWords;
+    private OpenNLP openNlp;
+    private Trends_DB_Handler trends_db_handler;
 
     YallaController(SuggestionRepository suggestionRepository) throws FileNotFoundException {
         this.suggestionRepository = suggestionRepository;
         this.stemmer = new Stemmer();
         this.stopWords = this.Stop_Words();
         this.pageRanker = new PageRanker();
+        this.openNlp = new OpenNLP();
+        this.trends_db_handler = new Trends_DB_Handler();
+        this.trends_db_handler.connect();
     }
 
-    @RequestMapping(method = RequestMethod.POST, value = spring_path + "/addSuggestion")
-    public void addSuggestion(@RequestBody Suggestion suggestion)
+    @RequestMapping(method = RequestMethod.POST, value = spring_path + "/addSuggestion/{country}")
+    public void addSuggestion(@RequestBody Suggestion suggestion,
+                              @PathVariable("country") String  country)
         /*
             * This function add the suggestion to table suggestion
             *
             * */
     {
+        ArrayList<String> trendQuery = new ArrayList<String>();
+        String[] words = suggestion.getSuggestion().trim().split("\\s+");
         try {
+            System.out.println("POSTING");
             suggestionRepository.save(suggestion);
+            int i = 0;
+            while(i < words.length) {
+                trendQuery.add(words[i]);
+                i++;
+            }
+            this.openNlp.NamesExtraction(trendQuery,country);
         }
         catch (DataIntegrityViolationException e)
         {
@@ -114,25 +131,12 @@ public class YallaController {
         return response;
     }
 
-    @RequestMapping(method = RequestMethod.GET, value = spring_path + "/test")
-    public void testRanker() throws SQLException {
+    @RequestMapping(method = RequestMethod.GET, value = spring_path + "/getTrends/{country}")
+    public List<Object> getTrends(@PathVariable("country") String country) {
         /*
-        * test function for ranker functions
-        * http://localhost:8080/api/v1/test
+        * function return trends
         * */
-
-        //MySqlTest.connect();
-        System.out.println("Inside ranker");
-        //p1.pagePopularity();
-
-        ArrayList<String> searchWords = new ArrayList<String>();
-        searchWords.add("metro");
-        searchWords.add("javatpoint");
-        searchWords.add("loop");
-        searchWords.add("mobile");
-        searchWords.add("plate");
-        //this.pageRanker.pageRelevance(searchWords,false);
-        //p1.imageRelevance(searchWords);
+        return this.trends_db_handler.GetTrends(country);
     }
 
     // Utility function to get stop words
